@@ -3,6 +3,8 @@
 class Edge_AllConfigurableOptions_Block_Product_View_Type_Configurable
     extends Mage_Catalog_Block_Product_View_Type_Configurable
 {
+    protected $_sorts = array();
+
     protected function _prepareLayout()
     {
         $head = Mage::app()->getLayout()->getBlock('head');
@@ -79,6 +81,7 @@ class Edge_AllConfigurableOptions_Block_Product_View_Type_Configurable
             $optionPrices = array();
             $prices = $attribute->getPrices();
             if (is_array($prices)) {
+                $prices = $this->_sortOptions($prices, $attributeId);
                 foreach ($prices as $value) {
                     if(!$this->_validateAttributeValue($attributeId, $value, $options)) {
                         continue;
@@ -170,5 +173,33 @@ class Edge_AllConfigurableOptions_Block_Product_View_Type_Configurable
         $config = array_merge($config, $this->_getAdditionalConfig());
 
         return Mage::helper('core')->jsonEncode($config);
+    }
+
+    protected function _getSorts($attributeId)
+    {
+        if (null === $this->_sorts[$attributeId]) {
+            $this->_sorts[$attributeId] = array_reduce(
+                Mage::getResourceModel('eav/entity_attribute_option_collection')
+                    ->setAttributeFilter($attributeId)
+                    ->getData(),
+
+                function(&$result, $item){
+                    $result[$item['option_id']] = $item['sort_order'];
+                    return $result;
+                }
+            );
+        }
+        return $this->_sorts[$attributeId];
+    }
+
+    protected function _sortOptions($options, $attributeId)
+    {
+        $sorts = $this->_getSorts($attributeId);
+        $sorter = array();
+        foreach ($options as $key => $option) {
+            $sorter[$key] = $sorts[$option['value_index']];
+        }
+        array_multisort($sorter, SORT_ASC, $options);
+        return $options;
     }
 }
