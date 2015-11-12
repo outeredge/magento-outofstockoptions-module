@@ -177,7 +177,7 @@ class Edge_AllConfigurableOptions_Block_Product_View_Type_Configurable
 
     protected function _getSorts($attributeId)
     {
-        if (null === $this->_sorts[$attributeId]) {
+        if (empty($this->_sorts[$attributeId])) {
             $this->_sorts[$attributeId] = array_reduce(
                 Mage::getResourceModel('eav/entity_attribute_option_collection')
                     ->setAttributeFilter($attributeId)
