@@ -18,6 +18,7 @@ use Magento\Swatches\Model\SwatchAttributesProvider;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Locale\Format;
 use Magento\CatalogInventory\Api\Data\StockItemInterfaceFactory;
+use Magento\InventorySalesApi\Api\GetProductSalableQtyInterface;
 
 /**
  * Class Configurable
@@ -52,6 +53,10 @@ class Configurable extends SwatchConfigurable
      * @var StockItemInterfaceFactory
      */
     private $stockItemInterfaceFactory;
+    /**
+     * @var GetProductSalableQtyInterface
+     */
+    private $getProductSalableQtyInterface;
 
     /**
      * @param Context $context
@@ -69,6 +74,7 @@ class Configurable extends SwatchConfigurable
      * @param SwatchAttributesProvider $swatchAttributesProvider
      * @param Format|null $localeFormat
      * @param StockItemInterfaceFactory $stockItemInterfaceFactory
+     * @param GetProductSalableQtyInterface $getProductSalableQtyInterface
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      */
     public function __construct(
@@ -86,7 +92,8 @@ class Configurable extends SwatchConfigurable
         array $data = [],
         SwatchAttributesProvider $swatchAttributesProvider = null,
         Format $localeFormat = null,
-        StockItemInterfaceFactory $stockItemInterfaceFactory
+        StockItemInterfaceFactory $stockItemInterfaceFactory,
+        GetProductSalableQtyInterface $getProductSalableQtyInterface
     ){
         $this->swatchHelper = $swatchHelper;
         $this->swatchMediaHelper = $swatchMediaHelper;
@@ -111,6 +118,7 @@ class Configurable extends SwatchConfigurable
         );
         $this->context = $context;
         $this->stockItemInterfaceFactory = $stockItemInterfaceFactory;
+        $this->getProductSalableQtyInterface = $getProductSalableQtyInterface;
     }
 
     /**
@@ -146,9 +154,17 @@ class Configurable extends SwatchConfigurable
 
         foreach ($allProducts as $product) {
             if ($product->isSaleable() || $skipSaleableCheck) {
-                $stock[$product->getId()] = $this->getStockItem($product->getId());
+
+                //Check salable quantity
+                $salableQty = $this->getProductSalableQtyInterface->execute($product->getSku(), 1);
+                if ($salableQty >= 1) {
+                    $stock[$product->getId()] = $this->getStockItem($product->getId());
+                } else {
+                    $stock[$product->getId()]['out_stock'] = 1; 
+                }
             }
         }
+
         return $stock;
     }
 
