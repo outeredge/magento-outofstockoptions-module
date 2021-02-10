@@ -30,7 +30,9 @@ class Data extends \Magento\ConfigurableProduct\Helper\Data
                 $options['index'][$productId][$productAttributeId] = $attributeValue;
             }
             //Adding stock status in the option list.
-            $options['stock'][$productId][] = $stockdata[$productId]['out_stock'];
+            if (isset($stockdata)) {
+                $options['stock'][$productId][] = $stockdata[$productId]['out_stock'];
+            }
         }
         return $options;
     }
